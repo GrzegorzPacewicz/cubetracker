@@ -1,0 +1,18 @@
+{
+  "name": "Cube Tracker",
+  "short_name": "Cube Tracker",
+  "description": "Tracker treningu speedcubingu",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#f4f6f9",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

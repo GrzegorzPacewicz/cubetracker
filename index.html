@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cube Tracker</title>
+    <meta
+      name="description"
+      content="Tracker treningu speedcubingu"
+    />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Cube Tracker" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat">
+        <span class="stat-value mono" id="total-days">0</span>
+        <span class="stat-label">dni</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value mono" id="streak-count">0</span>
+        <span class="stat-label">streak</span>
+      </div>
+      <div class="week-progress" id="week-progress"></div>
+      <button class="auth-btn" id="auth-btn" onclick="toggleAuth()">
+        <i class="ti ti-user"></i>
+      </button>
+    </div>
+
+    <!-- Focus Card -->
+    <div class="focus-card" id="focus-card">
+      <h3>Na co położyć nacisk</h3>
+      <div id="focus-content"></div>
+    </div>
+
+    <!-- Weekly Plan Card -->
+    <div class="weekly-plan-card" id="weekly-plan-card">
+      <div class="weekly-plan-header">
+        <h3 onclick="toggleWeeklyPlan()">Plan tygodniowy</h3>
+        <div class="weekly-plan-actions">
+          <button class="edit-btn" onclick="openPlansPanel()" title="Zarządzaj planami">
+            <i class="ti ti-settings"></i>
+          </button>
+          <i class="ti ti-chevron-down" onclick="toggleWeeklyPlan()"></i>
+        </div>
+      </div>
+      <div class="weekly-plan-content" id="weekly-plan-content"></div>
+    </div>
+
+
+    <!-- Today Card -->
+    <div class="today-card" id="today-card">
+      <div class="card-header">
+        <h2>Dzisiaj</h2>
+        <span class="date mono" id="today-date"></span>
+      </div>
+      <div class="task-list" id="today-tasks"></div>
+    </div>
+
+    <!-- History -->
+    <div class="history-section">
+      <h3>Historia</h3>
+      <div id="history-content"></div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 id="modal-title"></h3>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="task-list" id="modal-tasks"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="edit-modal" onclick="closeEditModal(event)">
+      <div class="modal-content edit-modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 id="edit-modal-title">Edytuj plan</h3>
+          <button class="modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit-date">
+
+          <div class="form-group">
+            <label>Obecny plan:</label>
+            <div id="edit-current-tasks" class="current-tasks-preview"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-action">Akcja:</label>
+            <select id="edit-action" onchange="updateEditFormVisibility()">
+              <option value="custom">Własne zadania</option>
+              <option value="rest">Dzień wolny</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-reason">Powód zmiany:</label>
+            <input type="text" id="edit-reason" placeholder="np. zamiana z piątkiem">
+          </div>
+
+          <div class="form-group" id="edit-tasks-group">
+            <label>Zadania:</label>
+            <div id="edit-tasks-list" class="edit-tasks-list"></div>
+            <button type="button" class="btn btn-add" onclick="addEditTaskWithSelect()">
+              <i class="ti ti-plus"></i> Dodaj zadanie
+            </button>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-danger" onclick="deleteEditOverride()">Usuń override</button>
+            <button class="btn btn-primary" onclick="saveEditModal()">Zapisz</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plans Panel Modal -->
+    <div class="modal-overlay" id="plans-modal" onclick="closePlansPanel(event)">
+      <div class="modal-content plans-modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Zarządzanie planami</h3>
+          <button class="modal-close" onclick="closePlansPanel()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="plans-tabs">
+            <button class="plans-tab active" data-tab="week" onclick="switchPlansTab('week')">Ten tydzień</button>
+            <button class="plans-tab" data-tab="variants" onclick="switchPlansTab('variants')">Warianty</button>
+            <button class="plans-tab" data-tab="templates" onclick="switchPlansTab('templates')">Zadania</button>
+            <button class="plans-tab" data-tab="focus" onclick="switchPlansTab('focus')">Focus</button>
+          </div>
+
+          <!-- Tab: This Week -->
+          <div class="plans-tab-content" id="plans-tab-week">
+            <div class="form-group">
+              <label>Wybierz wariant dla tego tygodnia:</label>
+              <select id="week-variant-select" onchange="onWeekVariantChange()">
+                <option value="">-- wybierz wariant --</option>
+              </select>
+            </div>
+            <div id="week-preview" class="week-preview"></div>
+          </div>
+
+          <!-- Tab: Variants -->
+          <div class="plans-tab-content hidden" id="plans-tab-variants">
+            <div id="variants-list" class="variants-list"></div>
+            <button class="btn btn-add" onclick="openVariantEditor()">
+              <i class="ti ti-plus"></i> Nowy wariant
+            </button>
+          </div>
+
+          <!-- Tab: Task templates -->
+          <div class="plans-tab-content hidden" id="plans-tab-templates">
+            <div id="templates-list" class="focus-list"></div>
+            <div class="focus-actions">
+              <button class="btn btn-add" onclick="addTemplateItem()">
+                <i class="ti ti-plus"></i> Dodaj zadanie
+              </button>
+              <div class="save-group">
+                <span class="save-status" id="templates-save-status"></span>
+                <button class="btn btn-primary" id="templates-save-btn" onclick="saveAllTemplates()" disabled>
+                  Zapisz zmiany
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Focus -->
+          <div class="plans-tab-content hidden" id="plans-tab-focus">
+            <div id="focus-list" class="focus-list"></div>
+            <div class="focus-actions">
+              <button class="btn btn-add" onclick="addFocusItem()">
+                <i class="ti ti-plus"></i> Dodaj zasadę
+              </button>
+              <div class="save-group">
+                <span class="save-status" id="focus-save-status"></span>
+                <button class="btn btn-primary" id="focus-save-btn" onclick="saveAllFocus()" disabled>
+                  Zapisz zmiany
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant Editor Modal -->
+    <div class="modal-overlay" id="variant-modal" onclick="closeVariantEditor(event)">
+      <div class="modal-content variant-modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 id="variant-modal-title">Nowy wariant</h3>
+          <button class="modal-close" onclick="closeVariantEditor()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="variant-id">
+          <div class="form-group">
+            <label for="variant-name">Nazwa:</label>
+            <input type="text" id="variant-name" placeholder="np. Nacisk na lookahead">
+          </div>
+          <div class="form-group">
+            <label for="variant-desc">Opis:</label>
+            <input type="text" id="variant-desc" placeholder="Krótki opis wariantu">
+          </div>
+
+          <div class="variant-days">
+            <div class="variant-day" data-day="monday">
+              <div class="variant-day-header">Poniedziałek</div>
+              <div class="variant-day-tasks" id="variant-monday"></div>
+              <button class="btn-small" onclick="addVariantTask('monday')">+ zadanie</button>
+            </div>
+            <div class="variant-day" data-day="tuesday">
+              <div class="variant-day-header">Wtorek</div>
+              <div class="variant-day-tasks" id="variant-tuesday"></div>
+              <button class="btn-small" onclick="addVariantTask('tuesday')">+ zadanie</button>
+            </div>
+            <div class="variant-day" data-day="wednesday">
+              <div class="variant-day-header">Środa</div>
+              <div class="variant-day-tasks" id="variant-wednesday"></div>
+              <button class="btn-small" onclick="addVariantTask('wednesday')">+ zadanie</button>
+            </div>
+            <div class="variant-day" data-day="thursday">
+              <div class="variant-day-header">Czwartek</div>
+              <div class="variant-day-tasks" id="variant-thursday"></div>
+              <button class="btn-small" onclick="addVariantTask('thursday')">+ zadanie</button>
+            </div>
+            <div class="variant-day" data-day="friday">
+              <div class="variant-day-header">Piątek</div>
+              <div class="variant-day-tasks" id="variant-friday"></div>
+              <button class="btn-small" onclick="addVariantTask('friday')">+ zadanie</button>
+            </div>
+            <div class="variant-day" data-day="saturday">
+              <div class="variant-day-header">Sobota</div>
+              <div class="variant-day-tasks" id="variant-saturday"></div>
+              <button class="btn-small" onclick="addVariantTask('saturday')">+ zadanie</button>
+            </div>
+            <div class="variant-day" data-day="sunday">
+              <div class="variant-day-header">Niedziela</div>
+              <div class="variant-day-tasks" id="variant-sunday"></div>
+              <button class="btn-small" onclick="addVariantTask('sunday')">+ zadanie</button>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-secondary" id="variant-archive-btn" onclick="toggleVariantArchive()">Archiwizuj</button>
+            <button class="btn btn-danger" id="variant-delete-btn" onclick="deleteCurrentVariant()">Usuń</button>
+            <button class="btn btn-primary" onclick="saveVariant()">Zapisz</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="login-modal">
+      <div class="modal-content login-modal-content">
+        <div class="modal-header">
+          <h3>Zaloguj się</h3>
+        </div>
+        <div class="modal-body">
+          <form id="login-form" onsubmit="handleLogin(event)">
+            <div class="form-group">
+              <label for="login-email">Email:</label>
+              <input type="email" id="login-email" required autocomplete="email">
+            </div>
+            <div class="form-group">
+              <label for="login-password">Hasło:</label>
+              <input type="password" id="login-password" required autocomplete="current-password">
+            </div>
+            <div id="login-error" class="login-error"></div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Zaloguj</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="pocketbase.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
